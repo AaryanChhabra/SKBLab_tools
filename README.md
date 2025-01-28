@@ -1,5 +1,3 @@
-# SKBLab_tools
-
 # Cell culture
 ### Cell passage - calculator
 

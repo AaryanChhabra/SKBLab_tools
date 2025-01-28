@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cell Culture Volume Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #34495e;
+            font-weight: 500;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .result {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #ecf5fd;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .highlight {
+            color: #3498db;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cell Culture Volume Calculator</h1>
+        
+        <div class="input-group">
+            <label>Cell Counts (4 measurements):</label>
+            <div class="grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+                <input type="number" id="count1" placeholder="Count 1" step="any">
+                <input type="number" id="count2" placeholder="Count 2" step="any">
+                <input type="number" id="count3" placeholder="Count 3" step="any">
+                <input type="number" id="count4" placeholder="Count 4" step="any">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Dilution Factor:</label>
+            <div class="radio-group">
+                <div class="radio-item">
+                    <input type="radio" id="dilution2" name="dilution" value="2" checked>
+                    <label for="dilution2">2</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="dilution20" name="dilution" value="20">
+                    <label for="dilution20">20</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="dilutionCustom" name="dilution" value="custom">
+                    <label for="dilutionCustom">Custom:</label>
+                    <input type="number" id="customDilution" style="width: 80px;" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Final Volume (ml):</label>
+            <input type="number" id="finalVolume" value="5" step="0.1">
+        </div>
+
+        <div class="input-group">
+            <label>Final Cell Concentration:</label>
+            <select id="finalConcentration">
+                <option value="4e5">4 × 10⁵ (HEKs)</option>
+                <option value="5e5">5 × 10⁵ (Fibroblast)</option>
+            </select>
+        </div>
+
+        <button onclick="calculate()">Calculate</button>
+
+        <div class="result" id="result">
+            <p>Add <span class="highlight" id="xValue">0</span> ml of cell solution</p>
+            <p>Add <span class="highlight" id="dmemVolume">0</span> ml of DMEM</p>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('input[name="dilution"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.getElementById('customDilution').disabled = this.value !== 'custom';
+            });
+        });
+
+        function calculate() {
+            // Get input values
+            const counts = [
+                parseFloat(document.getElementById('count1').value),
+                parseFloat(document.getElementById('count2').value),
+                parseFloat(document.getElementById('count3').value),
+                parseFloat(document.getElementById('count4').value)
+            ];
+
+            // Get dilution factor
+            let dilution;
+            const dilutionRadio = document.querySelector('input[name="dilution"]:checked');
+            if (dilutionRadio.value === 'custom') {
+                dilution = parseFloat(document.getElementById('customDilution').value);
+            } else {
+                dilution = parseFloat(dilutionRadio.value);
+            }
+
+            const finalVolume = parseFloat(document.getElementById('finalVolume').value);
+            const finalConcentration = parseFloat(document.getElementById('finalConcentration').value);
+
+            // Calculate average cell count
+            const avg = counts.reduce((a, b) => a + b, 0) / counts.length;
+
+            // Perform calculation
+            const x = (finalConcentration * finalVolume) / (avg * 10000 * dilution);
+            const dmemVolume = finalVolume - x;
+
+            // Display results
+            const resultDiv = document.getElementById('result');
+            if (isNaN(x) || isNaN(dmemVolume) || dmemVolume < 0) {
+                resultDiv.innerHTML = '<p class="highlight">Error: Please check your input values</p>';
+                resultDiv.classList.add('show');
+                return;
+            }
+
+            document.getElementById('xValue').textContent = x.toFixed(2);
+            document.getElementById('dmemVolume').textContent = dmemVolume.toFixed(2);
+            resultDiv.classList.add('show');
+        }
+    </script>
+</body>
+</html>
